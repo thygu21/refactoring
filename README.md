@@ -2,15 +2,18 @@
 
 self study for refactoring. </br>
 리팩토링에 관한 책을 공부하고 남겨두는 기록. </br></br>
-2020. 07. 11 시작
+2020. 07. 11 시작</br>
+REFECTORING. 1999. by Martic. Fowler.
 
-- REFECTORING. 1999. by Martic. Fowler.
+</br>
 
 ## :memo: Table of Contents
 
-- [예제로 시작하는 리팩토링](#첫-번째-예제)
+- [예제로 시작하는 리팩토링](#예제로-시작하는-리팩토링)
 
-## 첫 번째 예제
+</br>
+
+## 예제로 시작하는 리팩토링
 
 ### 리팩토링을 시작하기 전에
 
@@ -18,6 +21,7 @@ self study for refactoring. </br>
 
 이 테스트 셋은 self-checking이다. </br>
 이것이 **첫 번째 안전장치**이다.
+
 
 ### 리팩토링 중에
 
@@ -33,4 +37,145 @@ self study for refactoring. </br>
 
 3. 임시변수는 가능하면 제거하는 것이 좋다.
 
-퍼포먼스 측면에서는 여러 번 함수를 호출해야 하므로 손해지만 클래스에서 최적화 될 수 있다. [리팩토링과 퍼포먼스](#리팩토링과-퍼포먼스)
+퍼포먼스 측면에서는 여러 번 함수를 호출해야 하므로 손해지만 클래스에서 최적화 될 수 있다.  [리팩토링과 퍼포먼스](#리팩토링과-퍼포먼스) </br>
+당장 최적화 작업을 하는 것이 아니라면 차후 최적화를 효과적으로 하기 위해서라도 리팩토링은 필수적이다. </br>
+프로파일을 보기 전에는 루프에 대한 퍼포먼스 하락에 대해서 걱정하지 않아도 된다.`(case by case?)` </br>
+
+
+### 조건문에 다형성 추가
+
+switch문에 다른 클래스의 객체를 포함시키는 것은 좋지 않다.
+
+
+### 클래스 상속
+
+단순한 상속은 기능을 명확히 구분할 수 없다. </br>
+Strategy/State 패턴을 이용해 클래스를 상속한다. </br>
+
+get/set 메소드를 이용해서 접근하는 분리된 클래스를 만든다. </br>
+분리된 클래스에서 추상메소드를 선언하고 상속하는 클래스에서 기능별 메소드를 오버라이드 한다.
+
+### 리팩토링 전후 비교
+
+- 리팩토링 전
+
+```
+#Movie
+public class Movie
+{
+    public static final int CHILDREN = 2;
+    public static final int REGULAR = 0;
+    public static final int NEW_RELEASE = 1;
+    
+    private String _title;
+    private int _priceCode;
+
+    public Movie(String title, int priceCode)
+    {
+        _title = title;
+        _priceCode = priceCode;
+    }
+
+    public int getPriceCode()
+    {
+        return _priceCode;
+    }
+
+    public void setPriceCode(int arg) 
+    {
+        return _arg;
+    }
+
+    public String getTitle()
+    {
+        return _title;
+    }
+}
+```
+
+```
+#Rental
+class Rental{
+    private Movie _movie;
+    private int _daysRented;
+
+    public Rental(Movie movie, int _daysRented)
+    {
+        _movie = movie;
+        _daysRented = daysRented;
+    }
+    public int getDaysRented()
+    {
+        return _daysRented;
+    }
+    public Movie getMovie()
+    {
+        return _movie;
+    }
+}
+```
+
+```
+#Customer
+class Customer{
+    private String _name;
+    private Vector _rentals = new Vector();
+
+    public Customer(String name)
+    {
+        _name = name;
+    }
+
+    public void addRental(Rental arg)
+    {
+        _rentals.addElement(arg);
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    public String statement()
+    {
+        double totalAmount = 0;
+        int frequentRenterPoints = 0;
+        Enumeration rentals = _rentals.elements();
+        String result = "~~~";
+        while(rentals.hasMoreElements())
+        {
+            double thisAmount = 0;
+            Rental each = (Rental)rentals.nextElement();
+
+            switch(each.getMovie().getPriceCode())
+            {
+                case Movie.REGULAR:
+                thisAmount += (each.getDaysRented() - 2) * 1.5;
+                break;
+                case Movie.NEW_RELEASE:
+                thisAmount += each.getDaysRented() * 3;
+                break;
+                case Movie.CHILDRENS:
+                thisAmount += 1.5;
+                if(each.getDaysRented() > 3)
+                    thisAmount += (each.getDaysRented() - 3) * 1.5;
+                break;
+            }
+
+            frequentRenterPoints++;
+            if((each.getMovie().getPriceCode() == Movie.NEW_RELEASE) && each.getDaysRented() > 1)
+                frequentRenterPoints++;
+
+            result += "~~" + each.getMovie().getTitle() + "~~" + String.valueOf(thisAmount);
+            totalAmount += thisAmount;
+        }
+
+        result += " ~~ " String.valueOf(totalAmount) + String.valueOf(frequentRenterPoints);
+        return result;
+    }
+}
+```
+
+- 리팩토링 후
+
+## 리팩토링과 퍼포먼스
